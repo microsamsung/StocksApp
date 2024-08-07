@@ -3,45 +3,63 @@ using System.Text.Json;
 
 namespace StocksApp.Services
 {
+    /// <summary>
+    /// Service class for interacting with the Finhub API.
+    /// </summary>
     public class FinhubService : IFinhubService
     {
-        private readonly IHttpClientFactory? _httpClientFactory;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
 
-        public FinhubService(IHttpClientFactory? httpClientFactory,IConfiguration configuration)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FinhubService"/> class.
+        /// </summary>
+        /// <param name="httpClientFactory">Factory for creating HTTP clients.</param>
+        /// <param name="configuration">Configuration settings.</param>
+        public FinhubService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
-            _httpClientFactory = httpClientFactory;
-            _configuration = configuration;
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
-
-        public  async Task<Dictionary<string, object>> GetFinhubData(string stocks)
+        /// <summary>
+        /// Retrieves stock data from the Finhub API.
+        /// </summary>
+        /// <param name="stocks">The stock symbol to retrieve data for.</param>
+        /// <returns>A dictionary containing the stock data.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the response from the Finhub server is invalid.</exception>
+        public async Task<Dictionary<string, object>> GetFinhubData(string stocks)
         {
-            using (HttpClient httpClient = _httpClientFactory.CreateClient())
+            // Create an HttpClient instance using the factory
+            using HttpClient httpClient = _httpClientFactory.CreateClient();
+
+            // Build the request message
+            var requestUri = new Uri($"https://finnhub.io/api/v1/quote?symbol={stocks}&token={_configuration["FinhubToken"]}");
+            var httpRequestMessage = new HttpRequestMessage
             {
-                HttpRequestMessage httpRequestMessage = new HttpRequestMessage()
-                {
-                    RequestUri = new Uri($"https://finnhub.io/api/v1/quote?symbol={stocks}&token={_configuration["FinhubToken"]}"),
-                    Method = HttpMethod.Get
+                RequestUri = requestUri,
+                Method = HttpMethod.Get
+            };
 
-                };
+            // Send the request and get the response
+            HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
 
-                HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
+            // Ensure the response indicates success
+            httpResponseMessage.EnsureSuccessStatusCode();
 
-                  Stream stream = await httpResponseMessage.Content.ReadAsStreamAsync();
+            // Read the response stream
+            await using Stream responseStream = await httpResponseMessage.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(responseStream);
+            string responseText = await reader.ReadToEndAsync();
 
-              StreamReader reader = new StreamReader(stream);
-
-            string responseText = reader.ReadToEnd();
-
-                Dictionary<string, object>?responseDictionary = JsonSerializer.Deserialize<Dictionary<string, object>>(responseText);
-                if (responseDictionary == null)
-                    throw new InvalidOperationException("No response from finhub server");
-                
-                return responseDictionary;
-
+            // Deserialize the response JSON to a dictionary
+            var responseDictionary = JsonSerializer.Deserialize<Dictionary<string, object>>(responseText);
+            if (responseDictionary == null)
+            {
+                throw new InvalidOperationException("No response from Finhub server.");
             }
-        
+
+            return responseDictionary;
         }
     }
 }
