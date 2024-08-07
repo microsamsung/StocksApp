@@ -1,0 +1,13 @@
+﻿@model StocksApp.Model.Stock
+@{
+
+    ViewBag.Title = "Home";
+}
+
+<h1>Symbol :  @Model.StockSymbol</h1>
+<h3>
+<div>Current Price : @Model.CurrentPrice </div>
+<div>Highest Price : @Model.HighestPrice</div>
+<div>Lowest Price : @Model.LowestPrice</div>
+<div>Open Price: @Model.OpenPrice</div>
+</h3>

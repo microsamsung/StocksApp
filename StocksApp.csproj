@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>bd8f2b39-9887-42b1-a6a9-68306f0ae34c</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Contracts\" />
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+</Project>
